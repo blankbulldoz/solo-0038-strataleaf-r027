@@ -76,11 +76,14 @@ def matches(document, expression):
 
 
 def equality_terms(expression):
+    # 只有合取可达的等值项才能生成索引候选:匹配文档必然满足它。
+    # or/not 之下的等值项不被所有匹配文档满足,不能用于候选裁剪。
     if expression is None:
         return []
-    if "and" in expression or "or" in expression:
-        children = expression.get("and", expression.get("or"))
-        return [term for child in children for term in equality_terms(child)]
+    if "and" in expression:
+        return [term for child in expression["and"] for term in equality_terms(child)]
+    if "or" in expression or "not" in expression:
+        return []
     if expression.get("op") == "eq":
         return [(expression["field"], expression["value"])]
     return []
